@@ -22,79 +22,90 @@ const drawCartesianPlane = (
 
     const width = canvas.width;
     const height = canvas.height;
-    const originX = width / 2;
-    const originY = height / 2;
-    const unit = 20; // Pixels per unit
+
+    const originX = Math.floor(width / 2);
+    const originY = Math.floor(height / 2);
+    const unit = 20; // Pixels por unidade
+
+    // Ajuste para incluir uma unidade adicional
+    const extraUnits = 1; // Quantidade de unidades adicionais
+    const newWidth = Math.ceil(width / unit) + extraUnits;
+    const newHeight = Math.ceil(height / unit) + extraUnits;
 
     ctx.clearRect(0, 0, width, height);
 
-    // Draw axes
+    // Desenhar eixos
     ctx.beginPath();
     ctx.strokeStyle = "black";
     ctx.moveTo(0, originY);
-    ctx.lineTo(width, originY);
+    ctx.lineTo(width, originY); // Eixo X
     ctx.moveTo(originX, 0);
-    ctx.lineTo(originX, height);
+    ctx.lineTo(originX, height); // Eixo Y
     ctx.stroke();
 
-    // Draw grid
+    // Desenhar grade com unidades adicionais
     ctx.strokeStyle = "#ddd";
-    for (let x = 0; x < width; x += unit) {
+    for (let x = -newWidth * unit; x <= newWidth * unit; x += unit) {
         ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, height);
+        ctx.moveTo(originX + x, 0);
+        ctx.lineTo(originX + x, height);
         ctx.stroke();
     }
-    for (let y = 0; y < height; y += unit) {
+    for (let y = -newHeight * unit; y <= newHeight * unit; y += unit) {
         ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(width, y);
+        ctx.moveTo(0, originY + y);
+        ctx.lineTo(width, originY + y);
         ctx.stroke();
     }
 
-    // Draw coordinates
+    // Desenhar coordenadas na grade
     ctx.fillStyle = "black";
     ctx.font = "10px Arial";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
-    const range = 10; // Number of units visible in each direction
-    for (let x = -range; x <= range; x++) {
-        for (let y = -range; y <= range; y++) {
-            const screenX = originX + x * unit;
-            const screenY = originY - y * unit;
+    for (let x = -newWidth; x <= newWidth; x++) {
+        const screenX = originX + x * unit;
+        const screenY = originY;
 
-            if (x === 0 && y === 0) {
-                ctx.fillText("0", screenX, screenY); // Mark origin
-            } else if (x === 0) {
-                ctx.fillText(y.toString(), screenX, screenY); // Mark y-axis
-            } else if (y === 0) {
-                ctx.fillText(x.toString(), screenX, screenY); // Mark x-axis
-            }
+        if (x !== 0) {
+            ctx.fillText(x.toString(), screenX, screenY + 10); // Coordenadas do eixo X
+        }
+    }
+    for (let y = -newHeight; y <= newHeight; y++) {
+        const screenX = originX;
+        const screenY = originY - y * unit;
+
+        if (y !== 0) {
+            ctx.fillText(y.toString(), screenX - 10, screenY); // Coordenadas do eixo Y
         }
     }
 
-    // Draw transformed parallelogram
+    // Desenhar paralelogramo transformado
     const vectors: [number, number][] = [
-        [0, 0], // Origin
-        [1, 0], // X-axis vector
+        [0, 0], // Origem
+        [1, 0], // Vetor do eixo X
         [1, 1], // Diagonal
-        [0, 1], // Y-axis vector
+        [0, 1], // Vetor do eixo Y
     ];
     const transformed = vectors.map((v) => transformVector(matrix, v));
 
-    ctx.strokeStyle = color;
-    ctx.beginPath();
     transformed.forEach(([x, y], index) => {
-        if (index === 0) {
-            ctx.moveTo(originX + x * unit, originY - y * unit);
-        } else {
-            ctx.lineTo(originX + x * unit, originY - y * unit);
-        }
+        ctx.strokeStyle = ["red", "blue", "green", "orange"][index % 4]; // Lados com cores diferentes
+        ctx.beginPath();
+        const startX = originX + transformed[index % 4][0] * unit;
+        const startY = originY - transformed[index % 4][1] * unit;
+        const endX = originX + transformed[(index + 1) % 4][0] * unit;
+        const endY = originY - transformed[(index + 1) % 4][1] * unit;
+
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
     });
-    ctx.closePath();
-    ctx.stroke();
 };
+
+
+
 
 
 
@@ -200,10 +211,13 @@ const App: React.FC = () => {
                         onChange={(e) => handleMatrixChange(1, 1, e.target.value)}
                     />
                 </div>
+                <div className="bg-blue-50">
                 <button onClick={handleCheckAnswer}>Enviar Resposta</button>
                 <button onClick={handleGenerateNewMatrix}>
+                
                     Gerar Nova Matriz
                 </button>
+                </div>
             </div>
             {message && <p>{message}</p>}
         </div>
